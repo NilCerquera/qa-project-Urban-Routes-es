@@ -36,6 +36,7 @@ def retrieve_phone_code(driver) -> str:
         return code
 
 
+
 class UrbanRoutesPage:
     from_field = (By.ID, 'from')
     to_field = (By.ID, 'to')
