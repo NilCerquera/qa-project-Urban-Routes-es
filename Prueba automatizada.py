@@ -2,6 +2,8 @@ from selenium import webdriver
 from selenium.webdriver.common.by import By
 import time
 import data
+import main
+
 driver = webdriver.Chrome()  # controlador para usar en este caso Google Chrome
 driver.maximize_window()  # Modo de pantalla completa para las pruebas
 driver.get(data.urban_routes_url)
@@ -20,6 +22,7 @@ driver.find_element(By.CSS_SELECTOR, "div.np-button").click()
 driver.implicitly_wait(3)
 driver.find_element(By.ID, "phone").send_keys(data.phone_number)
 driver.find_element(By.CLASS_NAME, "button.button.full").click()
-
+code = main.TestUrbanRoutes.code(driver)
+driver.find_element(By.ID, "code").send_keys(code)
 time.sleep(3)
 driver.quit()

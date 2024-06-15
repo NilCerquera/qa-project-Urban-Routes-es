@@ -1,12 +1,10 @@
-import data
 from selenium import webdriver
-from selenium.webdriver import Keys
 from selenium.webdriver.common.by import By
-from selenium.webdriver.support import expected_conditions
-from selenium.webdriver.support.wait import WebDriverWait
+import time
+import data
+import main
 
 driver = webdriver.Chrome() # Google Chrome
-
 
 # no modificar
 def retrieve_phone_code(driver) -> str:
@@ -40,6 +38,13 @@ def retrieve_phone_code(driver) -> str:
 class UrbanRoutesPage:
     from_field = (By.ID, 'from')
     to_field = (By.ID, 'to')
+    button_order = (By.CLASS_NAME, "button.button.round")
+    select_comfort = (By.XPATH, "//div[@class='tcard-title' and text()='Comfort']")
+    button_phone_number = (By.CSS_SELECTOR, "div.np-button" )
+    input_number = (By.ID, "phone")
+    select_number = (By.CLASS_NAME, "button.button.full")
+    code_phone = (By.ID, "code")
+
 
     def __init__(self, driver):
         self.driver = driver
@@ -56,7 +61,27 @@ class UrbanRoutesPage:
     def get_to(self):
         return self.driver.find_element(*self.to_field).get_property('value')
 
+    def set_route(self,adrress_from,to):
+        self.set_from(adrress_from)
+        self.set_to(to)
 
+    def click_order_taxi(self):
+        self.driver.find_element(*self.button_order).click()
+
+    def box_comfort(self):
+        self.driver.find_element(*self.select_comfort).click()
+
+    def click_phone(self):
+        self.driver.find_element(*self.button_phone_number).click()
+
+    def add_number(self):
+        self.driver.find_element(*self.input_number).send_keys(data.phone_number)
+
+    def select_continue(self):
+        self.driver.find_element(*self.select_number).click()
+
+    def send_code(self,code):
+        self.driver.find_element(*self.code_phone).send_keys(code)
 
 class TestUrbanRoutes:
 
@@ -68,17 +93,36 @@ class TestUrbanRoutes:
         from selenium.webdriver import DesiredCapabilities
         capabilities = DesiredCapabilities.CHROME
         capabilities["goog:loggingPrefs"] = {'performance': 'ALL'}
-        cls.driver = webdriver.Chrome(desired_capabilities=capabilities)
+        cls.driver = webdriver.Chrome()
 
     def test_set_route(self):
         self.driver.get(data.urban_routes_url)
-        routes_page = UrbanRoutesPage(self.driver)
+        routes_page = UrbanRoutesPage(self.driver) # todas las pruebas deben contener
         address_from = data.address_from
         address_to = data.address_to
+        time.sleep(3)
         routes_page.set_route(address_from, address_to)
         assert routes_page.get_from() == address_from
         assert routes_page.get_to() == address_to
 
+    def test_select_comfort(self):
+        routes_page = UrbanRoutesPage(self.driver)
+        time.sleep(2)
+        routes_page.click_order_taxi()
+        routes_page.box_comfort()
+
+    def test_add_phone(self):
+        routes_page = UrbanRoutesPage(self.driver)
+        routes_page.click_phone()
+        routes_page.add_number()
+        time.sleep(2)
+        routes_page.select_continue()
+
+    def test_code(self):
+        routes_page = UrbanRoutesPage(self.driver)
+        code = retrieve_phone_code(driver=self.driver)
+        time.sleep(2)
+        routes_page.send_code(code)
 
     @classmethod
     def teardown_class(cls):
