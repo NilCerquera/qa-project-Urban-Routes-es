@@ -1,6 +1,11 @@
+import time
+
 from selenium import webdriver
 from selenium.webdriver import Keys
 from selenium.webdriver.common.by import By
+from selenium.webdriver.support import expected_conditions
+from selenium.webdriver.support.wait import WebDriverWait
+
 import data
 
 driver = webdriver.Chrome()  # Google Chrome
@@ -38,7 +43,13 @@ def retrieve_phone_code(driver) -> str:
         return code
 
 
+# Creamos un wait para realizar las pruebas correspondientes
+
 # Ingresamos los localizadores de la App
+
+
+def wait_load_page(from_field):
+    WebDriverWait(driver, 3).until(expected_conditions.visibility_of_element_located(from_field))
 
 
 class UrbanRoutesPage:
@@ -59,11 +70,11 @@ class UrbanRoutesPage:
     click_payment = (By.XPATH, ".//div[@class='pp-buttons']//button[text()='Agregar']")
     window_payment_closed = (By.CSS_SELECTOR, ".payment-picker.open .modal .section.active .close-button.section-close")
     driver_comment = (By.ID, "comment")
-    order_requirements = (By.CSS_SELECTOR, ".reqs-body .r-type-switch:nth-of-type(1) .slider")
     blankets_and_handkerchiefs = (By.CSS_SELECTOR, '.reqs-body .r-type-switch:nth-of-type(1) .slider')
+    switch_checkbox_blankets_and_handkerchiefs = (By.CSS_SELECTOR, 'input.switch-input')
     ice_cream_value = (By.CSS_SELECTOR, '.r-group-items .r-type-counter:nth-of-type(1) .counter-value')
     order_taxi_button = (By.CSS_SELECTOR, '.smart-button-main')
-    order_title = (By.CSS_SELECTOR, "button.order-button")
+    order_header_title = (By.CSS_SELECTOR, '.order-header-title')
 
     def __init__(self, driver):
         self.driver = driver
@@ -84,7 +95,17 @@ class UrbanRoutesPage:
         self.set_from(adrress_from)
         self.set_to(to)
 
+    # Agregamos una espera implicita para el cargue de la página
+    def wait_load_page(self):
+        self.driver.implicitly_wait(3)
+
+    # Agregamos una espera implicita para la espera del taxi y detalles
+
+    def wait_message(self):
+        self.driver.implicitly_wait(60)
+
     # Ingresamos una acción de seleccionar el taxi
+
     def click_order_taxi(self):
         self.driver.find_element(*self.button_order).click()
 
@@ -107,9 +128,8 @@ class UrbanRoutesPage:
 
     # Comprobamos si el número guardado corresponde
     def get_number_phone(self):
-        return self.driver.find_element(*self.input_number).get_property('value')
+        return self.driver.find_element(*self.input_number).get_property('value')  # Seleccionamos la opción continuar
 
-    # Seleccionamos la opción continuar
     def select_continue(self):
         self.driver.find_element(*self.select_number).click()
 
@@ -143,13 +163,12 @@ class UrbanRoutesPage:
         self.driver.find_element(*self.code_credit_card).send_keys(data.card_code)
         self.driver.find_element(*self.code_credit_card).send_keys(Keys.TAB)
 
-        # Comprobamos si se agrega el codigo de la tarjeta
+    # Comprobamos si se agrega el codigo de la tarjeta
 
     def get_code_credit_card(self):
         return self.driver.find_element(*self.code_credit_card).get_property('value')
 
     # Realizamos un click para agregar el metodo de pago
-
     def click_add_payment(self):
         self.driver.find_element(*self.click_payment).click()
 
@@ -165,29 +184,35 @@ class UrbanRoutesPage:
     def get_comment_driver(self):
         return self.driver.find_element(*self.driver_comment).get_property('value')
 
-    # Deslizamos la opción de requerimiento del pedido
-    def slider_order_requirements(self):
-       self.driver.find_element(*self.order_requirements).click()
-
-    # Comprobamos si el Selector se activa para el requerimiento del pedido
+    # Seleccionamos la opcion manta y pañuelos
 
     def activate_slider_blankets_and_handkerchiefs(self):
         self.driver.find_element(*self.blankets_and_handkerchiefs).click()
-        
+
     # Comprobamos si el selector se activa para seleccionar manta y pañuelos
 
-# Agregamos helado al pedido
+    def is_switch_checked_blankets_and_handkerchiefs(self):
+        checkbox = self.driver.find_element(*self.switch_checkbox_blankets_and_handkerchiefs)
+        return checkbox.is_selected()
+
+    # Agregamos helado al pedido
     def add_icecream_amount(self, new_value):
         counter_elements = self.driver.find_element(*self.ice_cream_value)
         self.driver.execute_script("arguments[0].textContent = arguments[1];", counter_elements, new_value)
 
-    # Hacemos click al pedido
+    # Comprobamos si agregó dos helados
+
+    def get_icecream_counter(self):
+        return self.driver.find_element(*self.ice_cream_value).text
+
+    # Hacemos click al pedido y esperamos para ver los detalles del pedido
     def click_order_taxi_button(self):
         self.driver.find_element(*self.order_taxi_button).click()
 
-    # Hacemos click en los detalles del pedido
-    def click_order_taxi_title(self):
-        self.driver.find_element(*self.order_title).click()
+    # Comprobamos el mensaje de la página.
+
+    def get_message(self):
+        return self.driver.find_element(*self.order_header_title).text
 
 
 # Aqui iniciamos las pruebas automatizadas
@@ -203,97 +228,98 @@ class TestUrbanRoutes:
         capabilities["goog:loggingPrefs"] = {'performance': 'ALL'}
         cls.driver = webdriver.Chrome()
 
+    # En esta prueba agregamos la direccion Desde y Hasta
     def test_set_route(self):
         self.driver.get(data.urban_routes_url)
         routes_page = UrbanRoutesPage(self.driver)  # todas las pruebas deben contener
         address_from = data.address_from
         address_to = data.address_to
-        self.driver.implicitly_wait(3)
+        routes_page.wait_load_page()
         routes_page.set_route(address_from, address_to)
         assert routes_page.get_from() == address_from
         assert routes_page.get_to() == address_to
 
+    # En esta prueba, seleccionamos la opción Comfort
     def test_select_comfort(self):
         routes_page = UrbanRoutesPage(self.driver)
-        self.driver.implicitly_wait(3)
+        routes_page.wait_load_page()
         routes_page.click_order_taxi()
         routes_page.box_comfort()
-        self.driver.implicitly_wait(3)
+        routes_page.wait_load_page()
         assert routes_page.is_comfort_selected()
 
+    # En esta prueba añadimos el telefono y codigo SMS enviado al usuario
     def test_add_phone(self):
         routes_page = UrbanRoutesPage(self.driver)
         routes_page.click_phone()
         routes_page.add_number()
-        self.driver.implicitly_wait(3)
+        routes_page.wait_load_page()
         routes_page.select_continue()
+        routes_page = UrbanRoutesPage(self.driver)
+        code = retrieve_phone_code(driver=self.driver)
+        routes_page.wait_load_page()
+        routes_page.send_code(code)
+        routes_page = UrbanRoutesPage(self.driver)
+        routes_page.wait_load_page()
+        routes_page.ok_code()
         phone_number = data.phone_number
         assert routes_page.get_number_phone() == phone_number
 
-    def test_code(self):
-        routes_page = UrbanRoutesPage(self.driver)
-        code = retrieve_phone_code(driver=self.driver)
-        self.driver.implicitly_wait(3)
-        routes_page.send_code(code)
-        self.driver.implicitly_wait(3)
-
-    def test_submit_code(self):
-        routes_page = UrbanRoutesPage(self.driver)
-        self.driver.implicitly_wait(3)
-        routes_page.ok_code()
-
+    # En esta prueba agregamos la tarjeta de credito
     def test_credit_card(self):
         routes_page = UrbanRoutesPage(self.driver)
-        self.driver.implicitly_wait(3)
+        routes_page.wait_load_page()
         routes_page.click_payment_button()
-        self.driver.implicitly_wait(3)
+        routes_page.wait_load_page()
         routes_page.click_new_card()
-        self.driver.implicitly_wait(3)
+        routes_page.wait_load_page()
         routes_page.add_number_card()
-        self.driver.implicitly_wait(3)
+        routes_page.wait_load_page()
         routes_page.add_code_card()
-        self.driver.implicitly_wait(3)
+        routes_page.wait_load_page()
         routes_page.click_add_payment()
-        self.driver.implicitly_wait(3)
+        routes_page.wait_load_page()
         routes_page.click_window_closed_payment()
-        self.driver.implicitly_wait(3)
+        routes_page.wait_load_page()
         number_credit_card = data.card_number
         code_credit_card = data.card_code
         assert routes_page.get_number_card() == number_credit_card
         assert routes_page.get_code_credit_card() == code_credit_card
 
+    # En esta prueba agregamos el mensaje al conductor.
     def test_comment_driver(self):
         routes_page = UrbanRoutesPage(self.driver)
-        self.driver.implicitly_wait(3)
+        routes_page.wait_load_page()
         routes_page.add_comment_driver()
-        self.driver.implicitly_wait(3)
+        routes_page.wait_load_page()
         comment_driver = data.message_for_driver
         assert routes_page.get_comment_driver() == comment_driver
 
-    def test_slider_order_requirements(self):
-        routes_page = UrbanRoutesPage(self.driver)
-        routes_page.slider_order_requirements()
+    # En esta prueba seleccionamos Manta y pañuelos
 
     def test_slider_blankets_and_handkerchiefs(self):
         routes_page = UrbanRoutesPage(self.driver)
         routes_page.activate_slider_blankets_and_handkerchiefs()
-        self.driver.implicitly_wait(1)
+        routes_page.wait_load_page()
+        assert routes_page.is_switch_checked_blankets_and_handkerchiefs()
 
+    # En esta prueba confirmamos 2 helados y comprobamos que se hayan agregado correctamente
     def test_click_two_ice_cream_value(self):
         routes_page = UrbanRoutesPage(self.driver)
-        self.driver.implicitly_wait(3)
+        routes_page.wait_load_page()
         counter_elements = '2'
         routes_page.add_icecream_amount(counter_elements)
+        ice_cream_value = routes_page.get_icecream_counter()
+        assert ice_cream_value == counter_elements
 
+    # En esta prueba realizamos el pedido y comprobamos el mensaje final de la página.
     def test_order_taxi_button(self):
         routes_page = UrbanRoutesPage(self.driver)
-        self.driver.implicitly_wait(3)
         routes_page.click_order_taxi_button()
-
-    def test_click_order_taxi_title(self):
-        routes_page = UrbanRoutesPage(self.driver)
-        self.driver.implicitly_wait(60)
-        routes_page.click_order_taxi_title()
+        routes_page.wait_message()
+        time.sleep(60)
+        final_message = routes_page.get_message()
+        assert "El conductor llegará" in final_message
 
     @classmethod
     def teardown_class(cls):
