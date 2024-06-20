@@ -95,4 +95,4 @@ Asegúrate de revisar y actualizar los requisitos del proyecto.
 Cordialmente
 
 Nilton Cerquera
-QA engineer
+QA engineer 2024
