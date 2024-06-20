@@ -1,11 +1,6 @@
 import json
 import time
 from selenium.common import WebDriverException
-from selenium.webdriver.support import expected_conditions
-from selenium.webdriver.support.wait import WebDriverWait
-
-import UrbanRoutesPage
-
 
 # Corrección 1, creamos el archivo para traer la función retrieve_phone_code y esperas wait
 
@@ -41,6 +36,3 @@ def retrieve_phone_code(driver) -> str:
 
 def wait_load_page(self):
     self.driver.implicitly_wait(3)
-
-
-# def wait_driver_final_message(self):
