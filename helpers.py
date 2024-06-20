@@ -1,10 +1,11 @@
 import json
 import time
 from selenium.common import WebDriverException
+from selenium.webdriver.support import expected_conditions
+from selenium.webdriver.support.wait import WebDriverWait
+from UrbanRoutesPage import UrbanRoutesPage
 
 # Corrección 1, creamos el archivo para traer la función retrieve_phone_code y esperas wait
-
-# no modificar ya que corresponde a la recuperación del codigo SMS al celular
 
 
 def retrieve_phone_code(driver) -> str:
@@ -35,4 +36,9 @@ def retrieve_phone_code(driver) -> str:
 # Creamos un wait para realizar las pruebas correspondientes y para esperar el mensaje del conductor final
 
 def wait_load_page(self):
-    self.driver.implicitly_wait(3)
+    self.driver.implicitly_wait(5)
+
+
+def wait_order(self):
+    WebDriverWait(self.driver, 60).until(expected_conditions.visibility_of_element_located(UrbanRoutesPage.
+                                                                                           order_header_title))

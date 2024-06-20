@@ -2,7 +2,7 @@ from selenium.webdriver import Keys
 from selenium.webdriver.common.by import By
 import data
 
-# Corrección, creamos el archivo UrbanRoutesPage para agregar los controladores y funciones
+# Corrección 2, creamos el archivo UrbanRoutesPage para agregar los controladores y funciones
 
 
 class UrbanRoutesPage:
@@ -16,11 +16,13 @@ class UrbanRoutesPage:
     select_number = (By.CLASS_NAME, "button.button.full")
     code_phone = (By.ID, "code")
     submit_code = (By.XPATH, ".//div[@class='modal']//button[text()='Confirmar']")
+    confirmed_phone = (By.XPATH, ".//div[@class='np-text']")
     button_payment = (By.CSS_SELECTOR, ".pp-button")
     add_credit_Card = (By.CSS_SELECTOR, ".pp-row.disabled")
     number_credit_card = (By.ID, "number")
     code_credit_card = (By.XPATH, ".//div[@class='card-code-input']/input[@id='code']")
     click_payment = (By.XPATH, ".//div[@class='pp-buttons']//button[text()='Agregar']")
+    card_added = (By.ID, 'card-1')
     window_payment_closed = (By.CSS_SELECTOR, ".payment-picker.open .modal .section.active .close-button.section-close")
     driver_comment = (By.ID, "comment")
     blankets_and_handkerchiefs = (By.CSS_SELECTOR, '.reqs-body .r-type-switch:nth-of-type(1) .slider')
@@ -70,10 +72,7 @@ class UrbanRoutesPage:
     def add_number(self):
         self.driver.find_element(*self.input_number).send_keys(data.phone_number)
 
-    # Comprobamos si el número guardado corresponde
-    def get_number_phone(self):
-        return self.driver.find_element(*self.input_number).get_property('value')  # Seleccionamos la opción continuar
-
+    # Seleccionamos el boton continuar
     def select_continue(self):
         self.driver.find_element(*self.select_number).click()
 
@@ -85,7 +84,13 @@ class UrbanRoutesPage:
     def ok_code(self):
         self.driver.find_element(*self.submit_code).click()
 
+    # Obtener el número telefónico
+    def get_number_phone(self):
+        number_completed = self.driver.find_element(*self.confirmed_phone).text  # Seleccionamos la opción continuar
+        return number_completed
+
     # Hacemos click en el botón agregar metodo de pago
+
     def click_payment_button(self):
         self.driver.find_element(*self.button_payment).click()
 
@@ -98,25 +103,26 @@ class UrbanRoutesPage:
         self.driver.find_element(*self.number_credit_card).send_keys(data.card_number)
         self.driver.find_element(*self.number_credit_card).send_keys(Keys.TAB)
 
-    # Comprobamos si se agrega el número de tarjeta
-    def get_number_card(self):
-        return self.driver.find_element(*self.number_credit_card).get_property('value')
-
-    # Agregamos el codigo de seguridad de la tarjeta
+    # Agregamos el número de código
     def add_code_card(self):
         self.driver.find_element(*self.code_credit_card).send_keys(data.card_code)
         self.driver.find_element(*self.code_credit_card).send_keys(Keys.TAB)
 
-    # Comprobamos si se agrega el codigo de la tarjeta
-
-    def get_code_credit_card(self):
-        return self.driver.find_element(*self.code_credit_card).get_property('value')
-
-    # Realizamos un click para agregar el metodo de pago
+# Realizamos un click para agregar el metodo de pago
     def click_add_payment(self):
         self.driver.find_element(*self.click_payment).click()
 
+# Obtenemos si la tarjeta se agregó correctamente
+    def get_card_id(self):
+        return self.driver.find_element(*self.card_added)
+
+#   Confirmamos si esta seleccionado la tarjeta
+    def is_card_1_checked(self) -> object:
+        card_checkbox = self.driver.find_element(*self.card_added)
+        return card_checkbox.is_selected()
     # Hacemos click para cerrar la pagina
+
+# Cerramos la ventana de metódo de pago
     def click_window_closed_payment(self):
         self.driver.find_element(*self.window_payment_closed).click()
 
